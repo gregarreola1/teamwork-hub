@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamWork Hub Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #1f4788 0%, #2e5c8a 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(31, 71, 136, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 30px;
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* KPI CARDS */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #1f4788;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card.revenue { border-left-color: #2e7d32; }
+        .kpi-card.receivables { border-left-color: #c62828; }
+        .kpi-card.payroll { border-left-color: #00897b; }
+        .kpi-card.bids { border-left-color: #f57f17; }
+
+        .kpi-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #1f4788;
+            margin-bottom: 10px;
+        }
+
+        .kpi-subtext {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .kpi-status {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .status-good { background: #e8f5e9; color: #2e7d32; }
+        .status-warning { background: #fff3e0; color: #f57f17; }
+        .status-alert { background: #ffebee; color: #c62828; }
+
+        /* CHARTS & GRAPHS */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container h3 {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        /* INVOICE STATUS BOARD */
+        .invoices-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .invoices-section h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .invoice-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .invoice-tabs button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.95em;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .invoice-tabs button.active {
+            color: #1f4788;
+            border-bottom-color: #1f4788;
+            font-weight: 600;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .invoice-table thead {
+            background: #f5f5f5;
+        }
+
+        .invoice-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .invoice-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .invoice-table tr:hover {
+            background: #fafafa;
+        }
+
+        .invoice-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-paid { background: #c8e6c9; color: #2e7d32; }
+        .badge-pending { background: #ffe0b2; color: #f57f17; }
+        .badge-overdue { background: #ffcdd2; color: #c62828; }
+
+        /* RECEIVABLES AGING */
+        .aging-bars {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .aging-bar {
+            text-align: center;
+        }
+
+        .aging-bar-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f4788;
+            margin-bottom: 5px;
+        }
+
+        .aging-bar-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* QUICK ACTIONS */
+        .actions-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #1f4788 0%, #2e5c8a 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 71, 136, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+        }
+
+        /* PROJECTS TIMELINE */
+        .projects-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .project-item {
+            padding: 15px;
+            border-left: 4px solid #1f4788;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .project-item h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85em;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .project-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* PAYROLL SUMMARY */
+        .payroll-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .payroll-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+
+        .payroll-row:last-child {
+            border-bottom: none;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .header-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .payroll-row {
+                grid-template-columns: 1fr;
+            }
+
+            .invoice-table {
+                font-size: 0.8em;
+            }
+
+            .invoice-table th,
+            .invoice-table td {
+                padding: 8px;
+            }
+        }
+
+        /* LOADING STATE */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1f4788;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body input,
+        .modal-body textarea,
+        .modal-body select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-family: inherit;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .close-modal {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .submit-modal {
+            background: #1f4788;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .submit-modal:hover {
+            background: #163559;
+        }
+
+        .close-modal:hover {
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1>🏗️ TeamWork Hub Dashboard</h1>
+            <p>Team Work Solution Inc. — Business Intelligence & Operations</p>
+            <div class="header-meta">
+                <span>📍 437 Briarwood Rd, Winder GA 30680</span>
+                <span>📅 Last Updated: <span id="lastUpdated">--</span></span>
+                <span>📊 YTD: <span id="ytdDate">--</span></span>
+            </div>
+        </header>
+
+        <!-- KPI CARDS -->
+        <section class="kpi-section">
+            <div class="kpi-card revenue">
+                <h3>💰 Total Revenue (YTD)</h3>
+                <div class="kpi-value" id="totalRevenue">$0.00</div>
+                <div class="kpi-subtext">Paid invoices this year</div>
+                <div class="kpi-status status-good">Tracking well</div>
+            </div>
+
+            <div class="kpi-card receivables">
+                <h3>🔴 Outstanding Receivables</h3>
+                <div class="kpi-value" id="outstandingReceivables">$0.00</div>
+                <div class="kpi-subtext">Money owed by customers</div>
+                <div class="kpi-status" id="receivablesStatus">Check aging</div>
+            </div>
+
+            <div class="kpi-card payroll">
+                <h3>👥 Total Payroll (YTD)</h3>
+                <div class="kpi-value" id="totalPayroll">$0.00</div>
+                <div class="kpi-subtext">Wages paid to employees</div>
+                <div class="kpi-status status-good">On budget</div>
+            </div>
+
+            <div class="kpi-card bids">
+                <h3>📝 Open Bids Value</h3>
+                <div class="kpi-value" id="openBidsValue">$0.00</div>
+                <div class="kpi-subtext"><span id="openBidsCount">0</span> pending proposals</div>
+                <div class="kpi-status status-warning">Follow up needed</div>
+            </div>
+        </section>
+
+        <!-- QUICK ACTIONS -->
+        <section class="actions-section">
+            <button class="action-btn" onclick="openModal('invoiceModal')">➕ Create Invoice</button>
+            <button class="action-btn secondary" onclick="openModal('bidModal')">📋 New Bid/Quote</button>
+            <button class="action-btn secondary" onclick="openModal('expenseModal')">💸 Log Expense</button>
+            <button class="action-btn secondary" onclick="refreshData()">🔄 Refresh Data</button>
+            <button class="action-btn danger" onclick="exportToCSV()">📥 Export Report</button>
+        </section>
+
+        <!-- CHARTS & GRAPHS -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h3>📈 Monthly Revenue Trend</h3>
+                <div class="chart-wrapper">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📊 Receivables Aging</h3>
+                <div class="aging-bars">
+                    <div class="aging-bar">
+                        <div class="aging-bar-value" id="age0_30">$0</div>
+                        <div class="aging-bar-label">0-30 days</div>
+                    </div>
+                    <div class="aging-bar">
+                        <div class="aging-bar-value" id="age31_60">$0</div>
+                        <div class="aging-bar-label">31-60 days</div>
+                    </div>
+                    <div class="aging-bar">
+                        <div class="aging-bar-value" id="age61_90">$0</div>
+                        <div class="aging-bar-label">61-90 days</div>
+                    </div>
+                    <div class="aging-bar">
+                        <div class="aging-bar-value" id="age90plus">$0</div>
+                        <div class="aging-bar-label">90+ days</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INVOICE STATUS BOARD -->
+        <section class="invoices-section">
+            <h2>📋 Recent Invoices</h2>
+            <div class="invoice-tabs">
+                <button class="active" onclick="filterInvoices('all')">All</button>
+                <button onclick="filterInvoices('paid')">✅ Paid</button>
+                <button onclick="filterInvoices('pending')">⏳ Pending</button>
+                <button onclick="filterInvoices('overdue')">⚠️ Overdue</button>
+            </div>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Days Outstanding</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceTableBody">
+                    <tr>
+                        <td colspan="7" class="loading">Loading invoice data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- PROJECTS TIMELINE -->
+        <section class="projects-section">
+            <h2>🏗️ Active Projects</h2>
+            <div id="projectsList">
+                <div class="loading">Loading projects...</div>
+            </div>
+        </section>
+
+        <!-- PAYROLL SUMMARY -->
+        <section class="payroll-section">
+            <h2>👥 Payroll Summary</h2>
+            <div class="payroll-row" style="background: #f5f5f5; font-weight: 600; margin-bottom: 10px;">
+                <div>Employee</div>
+                <div>Days Worked</div>
+                <div>Rate</div>
+                <div>Total Due</div>
+            </div>
+            <div id="payrollList">
+                <div class="loading">Loading payroll data...</div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>TeamWork Hub © 2026 | Data refreshes automatically | <a href="#" onclick="showHelp()">Need help?</a></p>
+        </footer>
+    </div>
+
+    <!-- MODALS -->
+    <div id="invoiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Create New Invoice</div>
+            <div class="modal-body">
+                <input type="text" placeholder="Customer Name" id="invoiceCustomer">
+                <input type="number" placeholder="Amount" id="invoiceAmount" step="0.01">
+                <input type="date" id="invoiceDate">
+                <textarea placeholder="Description/Scope" id="invoiceDescription"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="close-modal" onclick="closeModal('invoiceModal')">Cancel</button>
+                <button class="submit-modal" onclick="submitInvoice()">Create Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bidModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Create New Bid</div>
+            <div class="modal-body">
+                <input type="text" placeholder="Customer Name" id="bidCustomer">
+                <input type="text" placeholder="Project Address" id="bidAddress">
+                <input type="number" placeholder="Bid Amount" id="bidAmount" step="0.01">
+                <textarea placeholder="Project Scope" id="bidScope"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="close-modal" onclick="closeModal('bidModal')">Cancel</button>
+                <button class="submit-modal" onclick="submitBid()">Submit Bid</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Log Expense</div>
+            <div class="modal-body">
+                <input type="date" id="expenseDate">
+                <select id="expenseCategory">
+                    <option value="">Select Category</option>
+                    <option value="Materials">Materials</option>
+                    <option value="Labor">Labor</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Fuel">Fuel</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="text" placeholder="Description" id="expenseDescription">
+                <input type="number" placeholder="Amount" id="expenseAmount" step="0.01">
+            </div>
+            <div class="modal-footer">
+                <button class="close-modal" onclick="closeModal('expenseModal')">Cancel</button>
+                <button class="submit-modal" onclick="submitExpense()">Log Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
